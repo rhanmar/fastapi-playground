@@ -20,7 +20,7 @@ def get_db() -> SessionLocal:
         db.close()
 
 
-def get_user(user_id: int = Body(), db: Session = Depends(get_db)) -> models.User:
+def get_user(user_id: int, db: Session = Depends(get_db)) -> models.User:
     """Получить пользователя из запроса."""
     user_db = db.query(models.User).filter_by(id=user_id).first()
     if not user_db:
@@ -36,9 +36,9 @@ def read_root():
     return {"Hello": "World"}
 
 
-@app.post("/accrue")
+@app.patch("/api/users/{user_id}")
 def accrue_funds(
-    funds_amount: float = Body(),
+    funds_amount: float = Body(embed=True),
     user: models.User = Depends(get_user),
     db: Session = Depends(get_db),
 ):
@@ -49,23 +49,23 @@ def accrue_funds(
     return {"info": "Средства зачислены", "status_code": status.HTTP_200_OK}
 
 
-@app.get("/account", response_model=UserSchema)
+@app.get("/api/users/{user_id}", response_model=UserSchema)
 def user_account(user: models.User = Depends(get_user)) -> models.User:
     """Получить информацию о счёте Пользователя."""
     return user
 
 
-@app.get("/users", response_model=list[UserSchema])
+@app.get("/api/users/", response_model=list[UserSchema])
 def users_list(db: Session = Depends(get_db)) -> list[models.User]:
     """Получить список всех Пользователей."""
     users_db = db.query(models.User).all()
     return users_db
 
 
-@app.post("/create_user")
-def create_user(db: Session = Depends(get_db)) -> int:
+@app.post("/api/users/", status_code=status.HTTP_201_CREATED)
+def create_user(db: Session = Depends(get_db)) -> dict[str, int]:
     """Создать Пользователя."""
     user_db = models.User()
     db.add(user_db)
     db.commit()
-    return user_db.id
+    return {"user_id": user_db.id}
