@@ -36,17 +36,58 @@ def read_root():
     return {"Hello": "World"}
 
 
-@app.patch("/api/users/{user_id}")
-def accrue_funds(
-    funds_amount: float = Body(embed=True),
+@app.post("/api/users/{user_id}/add_money/")
+def add_money_to_account(
+    money_amount: float = Body(embed=True),
     user: models.User = Depends(get_user),
     db: Session = Depends(get_db),
 ):
     """Начислить средства."""
-    user.balance = funds_amount
+    user.balance += money_amount
     db.add(user)
     db.commit()
     return {"info": "Средства зачислены", "status_code": status.HTTP_200_OK}
+
+
+@app.post("/api/users/{user_id}/reserve/")
+def reserve_money(
+    money_amount: float = Body(embed=True),
+    service_id: str = Body(embed=True, default=None),
+    order_id: str = Body(embed=True, default=None),
+    user: models.User = Depends(get_user),
+    db: Session = Depends(get_db),
+):
+    """Зарезервировать средства."""
+    if user.balance < money_amount:
+        return {
+            "info": "Недостаточно средств для резервации",
+            "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
+        }
+    user.balance -= money_amount
+    user.reserve = money_amount
+    db.add(user)
+    db.commit()
+    print(f"Обработка service_id ({service_id})")
+    print(f"Обработка order_id ({order_id})")
+    return {"info": "Средства зарезервированы", "status_code": status.HTTP_200_OK}
+
+
+@app.post("/api/users/{user_id}/reserve/")
+def payment_confirmation(
+    money_amount: float = Body(embed=True),
+    service_id: str = Body(embed=True, default=None),
+    order_id: str = Body(embed=True, default=None),
+    user: models.User = Depends(get_user),
+    db: Session = Depends(get_db),
+):
+    """Подтвердить оплату и снять деньги с резерва."""
+    user.reserve = 0
+    db.add(user)
+    db.commit()
+    print(f"Обработка service_id ({service_id})")
+    print(f"Обработка order_id ({order_id})")
+    print(f"{money_amount} будет передано в бухгалтерию")
+    return {"info": "Средства зарезервированы", "status_code": status.HTTP_200_OK}
 
 
 @app.get("/api/users/{user_id}", response_model=UserSchema)
