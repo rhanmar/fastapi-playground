@@ -1,7 +1,7 @@
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Float
 from sqlalchemy.orm import relationship
 
-from .database import Base
+from db.database import Base
 
 
 class User(Base):
@@ -11,6 +11,7 @@ class User(Base):
 
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(128), unique=True, nullable=True)
     balance = Column(Float, default=0, info={"verbose_name": "Баланс пользователя"})
     reserve = Column(Float, default=0, info={"verbose_name": "Резерв пользователя"})
 

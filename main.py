@@ -3,8 +3,7 @@ from sqlalchemy.orm import Session
 from db import models
 from db.database import engine
 from db.database import SessionLocal
-from db.schemas import UserSchema
-
+from db.schemas import UserSchema, UserCreateSchema
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -104,9 +103,9 @@ def users_list(db: Session = Depends(get_db)) -> list[models.User]:
 
 
 @app.post("/api/users/", status_code=status.HTTP_201_CREATED)
-def create_user(db: Session = Depends(get_db)) -> dict[str, int]:
+def create_user(user: UserCreateSchema, db: Session = Depends(get_db)) -> dict[str, int]:
     """Создать Пользователя."""
-    user_db = models.User()
+    user_db = models.User(name=user.name)
     db.add(user_db)
     db.commit()
     return {"user_id": user_db.id}
