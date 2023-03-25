@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from db import models
 from db.database import engine
 from db.database import SessionLocal
-from db.schemas import UserSchema, UserCreateSchema
+from db.schemas import UserSchema, UserCreateSchema, TransactionSchema
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -63,7 +63,7 @@ def reserve_money(
             "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
         }
     user.balance -= money_amount
-    user.reserve = money_amount
+    user.reserve += money_amount
     db.add(user)
     db.commit()
     print(f"Обработка service_id ({service_id})")
@@ -74,8 +74,8 @@ def reserve_money(
 @app.post("/api/users/{user_id}/confirm/")
 def payment_confirmation(
     money_amount: float = Body(embed=True),
-    service_id: str = Body(embed=True, default=None),
-    order_id: str = Body(embed=True, default=None),
+    service_id: str = Body(embed=True),
+    order_id: str = Body(embed=True),
     user: models.User = Depends(get_user),
     db: Session = Depends(get_db),
 ):
@@ -88,10 +88,19 @@ def payment_confirmation(
     user.reserve -= money_amount
     db.add(user)
     db.commit()
-    print(f"Обработка service_id ({service_id})")
-    print(f"Обработка order_id ({order_id})")
-    print(f"{money_amount} будет передано в бухгалтерию")
-    return {"info": "Средства списаны с резерва", "status_code": status.HTTP_200_OK}
+
+    transaction_db = models.Transaction(
+        user_id=user.id,
+        amount=money_amount,
+        order_id=order_id,
+        service_id=service_id,
+    )
+    db.add(transaction_db)
+    db.commit()
+    return {
+        "info": f"Средства списаны с резерва. Создана Транзакция №{transaction_db.id}",
+        "status_code": status.HTTP_200_OK,
+    }
 
 
 @app.get("/api/users/{user_id}", response_model=UserSchema)
@@ -108,9 +117,18 @@ def users_list(db: Session = Depends(get_db)) -> list[models.User]:
 
 
 @app.post("/api/users/", status_code=status.HTTP_201_CREATED)
-def create_user(user: UserCreateSchema, db: Session = Depends(get_db)) -> dict[str, int]:
+def create_user(
+    user: UserCreateSchema, db: Session = Depends(get_db)
+) -> dict[str, int]:
     """Создать Пользователя."""
     user_db = models.User(name=user.name)
     db.add(user_db)
     db.commit()
     return {"user_id": user_db.id}
+
+
+@app.get("/api/transactions/", response_model=list[TransactionSchema])
+def transactions_list(db: Session = Depends(get_db)) -> list[models.Transaction]:
+    """Получить список Транзакций."""
+    transactions_db = db.query(models.Transaction).all()
+    return transactions_db
