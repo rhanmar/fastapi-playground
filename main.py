@@ -71,7 +71,7 @@ def reserve_money(
     return {"info": "Средства зарезервированы", "status_code": status.HTTP_200_OK}
 
 
-@app.post("/api/users/{user_id}/reserve/")
+@app.post("/api/users/{user_id}/confirm/")
 def payment_confirmation(
     money_amount: float = Body(embed=True),
     service_id: str = Body(embed=True, default=None),
@@ -79,14 +79,19 @@ def payment_confirmation(
     user: models.User = Depends(get_user),
     db: Session = Depends(get_db),
 ):
-    """Подтвердить оплату и снять деньги с резерва."""
-    user.reserve = 0
+    """Подтвердить оплату и снять указанное колияечтво денег с резерва."""
+    if user.reserve < money_amount:
+        return {
+            "info": "В резерве недостаточно средств",
+            "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
+        }
+    user.reserve -= money_amount
     db.add(user)
     db.commit()
     print(f"Обработка service_id ({service_id})")
     print(f"Обработка order_id ({order_id})")
     print(f"{money_amount} будет передано в бухгалтерию")
-    return {"info": "Средства зарезервированы", "status_code": status.HTTP_200_OK}
+    return {"info": "Средства списаны с резерва", "status_code": status.HTTP_200_OK}
 
 
 @app.get("/api/users/{user_id}", response_model=UserSchema)
