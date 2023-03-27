@@ -13,6 +13,7 @@ class UserSchema(BaseModel):
     name: str = None
     balance: float
     reserve: float
+    transactions_count: int = None
 
     class Config:
         orm_mode = True

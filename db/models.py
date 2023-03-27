@@ -1,6 +1,7 @@
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Float, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime
+from sqlalchemy.ext.hybrid import hybrid_property
 
 from db.database import Base
 
@@ -17,6 +18,10 @@ class User(Base):
     balance = Column(Float, default=0, info={"verbose_name": "Баланс пользователя"})
     reserve = Column(Float, default=0, info={"verbose_name": "Резерв пользователя"})
     transactions = relationship("Transaction", back_populates="user")
+
+    @hybrid_property
+    def transactions_count(self):
+        return len(self.transactions)
 
 
 class Transaction(Base):
