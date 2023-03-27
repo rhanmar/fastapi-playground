@@ -30,6 +30,19 @@ def get_user(user_id: int, db: Session = Depends(get_db)) -> models.User:
     return user_db
 
 
+def get_transaction(
+    transaction_id: int, db: Session = Depends(get_db)
+) -> models.Transaction:
+    """Получить Транзакцию по ID."""
+    transaction_db = db.query(models.Transaction).filter_by(id=transaction_id).first()
+    if not transaction_db:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Транзакция с ID {transaction_id} не найден.",
+        )
+    return transaction_db
+
+
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
@@ -132,3 +145,11 @@ def transactions_list(db: Session = Depends(get_db)) -> list[models.Transaction]
     """Получить список Транзакций."""
     transactions_db = db.query(models.Transaction).all()
     return transactions_db
+
+
+@app.get("/api/transactions/{transaction_id}/", response_model=TransactionSchema)
+def transaction_retrieve(
+    transaction: models.Transaction = Depends(get_transaction),
+) -> models.Transaction:
+    """Получить Транзакцию."""
+    return transaction
