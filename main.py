@@ -116,6 +116,28 @@ def payment_confirmation(
     }
 
 
+@app.post("/api/users/{user_id}/reset_reserve/")
+def reset_reserve(
+    user: models.User = Depends(get_user),
+    db: Session = Depends(get_db),
+):
+    """Вернуть деньги из резерва на баланс."""
+    if user.reserve <= 0:
+        return {
+            "info": "В резерве нет средств",
+            "status_code": status.HTTP_200_OK,
+        }
+    old_reserve = user.reserve
+    user.balance += user.reserve
+    user.reserve = 0
+    db.add(user)
+    db.commit()
+    return {
+        "info": f"{old_reserve} средств возвращены с резерва в баланс.",
+        "status_code": status.HTTP_200_OK,
+    }
+
+
 @app.get("/api/users/{user_id}", response_model=UserSchema)
 def user_account(user: models.User = Depends(get_user)) -> models.User:
     """Получить информацию о счёте Пользователя."""
