@@ -14,6 +14,10 @@ class UserSchema(BaseModel):
     balance: float
     reserve: float
     transactions_count: int = None
+    transactions_sum_amount: float = None
+    transactions_avg_amount: float = None
+    transactions_min_amount: float = None
+    transactions_max_amount: float = None
 
     class Config:
         orm_mode = True
