@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status, Body
+from fastapi import FastAPI, Depends, HTTPException, status, Body, Response
 from sqlalchemy.orm import Session
 from db import models
 from db.database import engine
@@ -72,7 +72,7 @@ def reserve_money(
     """Зарезервировать средства."""
     if user.balance < money_amount:
         return {
-            "info": "Недостаточно средств для резервации",
+            "info": "Недостаточно средств для резервирования",
             "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
         }
     user.balance -= money_amount
@@ -125,7 +125,7 @@ def reset_reserve(
     if user.reserve <= 0:
         return {
             "info": "В резерве нет средств",
-            "status_code": status.HTTP_200_OK,
+            "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
         }
     old_reserve = user.reserve
     user.balance += user.reserve
@@ -133,7 +133,7 @@ def reset_reserve(
     db.add(user)
     db.commit()
     return {
-        "info": f"{old_reserve} средств возвращены с резерва в баланс.",
+        "info": f"{old_reserve} средств возвращены с резерва в баланс",
         "status_code": status.HTTP_200_OK,
     }
 
@@ -170,7 +170,7 @@ def transactions_list(db: Session = Depends(get_db)) -> list[models.Transaction]
 
 
 @app.get("/api/transactions/{transaction_id}/", response_model=TransactionSchema)
-def transaction_retrieve(
+def transaction_detail(
     transaction: models.Transaction = Depends(get_transaction),
 ) -> models.Transaction:
     """Получить Транзакцию."""
