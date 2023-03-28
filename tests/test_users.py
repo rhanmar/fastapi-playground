@@ -54,6 +54,13 @@ def test_user_account(test_db, client, db_session, url_users_detail):
     assert "transactions_max_amount" in user_json
 
 
+def test_user_account_error(test_db, client, db_session, url_users_detail):
+    wrong_id = 404
+    response = client.get(url_users_detail.format(wrong_id))
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json() == {"detail": f"Пользователь с ID {wrong_id} не найден."}
+
+
 def test_add_money(test_db, client, db_session):
     user = user_factory(db_session).create()
     db_session.commit()
@@ -212,6 +219,14 @@ def test_transaction_detail(test_db, client, db_session):
     assert "order_id" in transaction_json
     assert "service_id" in transaction_json
     assert "created_at" in transaction_json
+
+
+def test_transaction_detail_error(test_db, client, db_session):
+    wrong_id = 404
+    url = f"/api/transactions/{wrong_id}"
+    response = client.get(url)
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json() == {"detail": f"Транзакция с ID {wrong_id} не найдена."}
 
 
 def test_users_list_transactions(test_db, client, db_session, url_users_list):

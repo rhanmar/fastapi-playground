@@ -38,7 +38,7 @@ def get_transaction(
     if not transaction_db:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Транзакция с ID {transaction_id} не найден.",
+            detail=f"Транзакция с ID {transaction_id} не найдена.",
         )
     return transaction_db
 
