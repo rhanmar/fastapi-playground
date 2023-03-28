@@ -3,7 +3,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from db.database import Base
-from main import app, get_db
+from main import app
+from dependencies import get_db
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 
@@ -52,4 +53,4 @@ def url_users_list():
 
 @pytest.fixture()
 def url_users_detail():
-    return "/api/users/{}"
+    return "/api/users/{}/"
