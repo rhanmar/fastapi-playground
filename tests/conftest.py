@@ -54,3 +54,13 @@ def url_users_list():
 @pytest.fixture()
 def url_users_detail():
     return "/api/users/{}/"
+
+
+@pytest.fixture()
+def url_transactions_list():
+    return "/api/transactions/"
+
+
+@pytest.fixture()
+def url_transactions_detail():
+    return "/api/transactions/{}/"
