@@ -37,18 +37,17 @@ def transactions_list(
 @router.get("/services_statistics/")
 def transactions_services_statistics(
     month: int | None = None, year: int | None = None, db: Session = Depends(get_db)
-) -> dict:
+) -> list[dict]:
     """Статистика по Услугам на основании Транзакций."""
     qs = db.query(
         models.Transaction.service_id.label("service_id"),
         func.count(models.Transaction.service_id).label("count"),
         func.sum(models.Transaction.amount).label("sum"),
     ).group_by(models.Transaction.service_id)
-    if month:
+    if month and year:
         qs = qs.filter(
             sqlalchemy.extract("month", models.Transaction.created_at) == month
         )
-    if year:
         qs = qs.filter(
             sqlalchemy.extract("year", models.Transaction.created_at) == year
         )

@@ -104,3 +104,105 @@ def test_transaction_list_filters(test_db, client, db_session, url_transactions_
     assert res_json[0]["id"] == transaction2.id
     assert res_json[1]["id"] == transaction3.id
     assert res_json[2]["id"] == transaction1.id
+
+
+def test_transactions_services_statistics(test_db, client, db_session):
+    service_id_1 = "111"
+    service_id_2 = "222"
+    amounts_1 = [2, 4, 6]
+    transaction11 = transaction_factory(db_session).create(
+        service_id=service_id_1, amount=amounts_1[0]
+    )
+    transaction12 = transaction_factory(db_session).create(
+        service_id=service_id_1, amount=amounts_1[1]
+    )
+    transaction13 = transaction_factory(db_session).create(
+        service_id=service_id_1, amount=amounts_1[2]
+    )
+    transactions1 = [transaction11, transaction12, transaction13]
+    amounts_2 = [3, 6]
+    transaction21 = transaction_factory(db_session).create(
+        service_id=service_id_2, amount=amounts_2[0]
+    )
+    transaction22 = transaction_factory(db_session).create(
+        service_id=service_id_2, amount=amounts_2[1]
+    )
+    transactions2 = [transaction21, transaction22]
+    db_session.commit()
+    assert db_session.query(Transaction).count() == len(transactions1) + len(
+        transactions2
+    )
+
+    url = "/api/transactions/services_statistics/"
+    response = client.get(url)
+    assert response.status_code == status.HTTP_200_OK
+    res_json = response.json()
+    assert len(res_json) == 2
+    for item_json in res_json:
+        match item_json["service_id"]:
+            case "111":  # service_id_1
+                assert item_json["count"] == len(transactions1)
+                assert item_json["sum"] == sum(amounts_1)
+            case "222":  # service_id_2
+                assert item_json["count"] == len(transactions2)
+                assert item_json["sum"] == sum(amounts_2)
+
+
+def test_transactions_services_statistics_with_dates(test_db, client, db_session):
+    service_id_1 = "111"
+    service_id_2 = "222"
+    amounts_1 = [2, 4, 6]
+    amounts_1_avoided = [8, 10]
+    now = datetime.now()
+    last_year_dt = now - timedelta(days=400)
+    two_years_ago_dt = now - timedelta(days=800)
+    transaction11 = transaction_factory(db_session).create(
+        service_id=service_id_1, amount=amounts_1[0], created_at=now
+    )
+    transaction12 = transaction_factory(db_session).create(
+        service_id=service_id_1, amount=amounts_1[1], created_at=now
+    )
+    transaction13 = transaction_factory(db_session).create(
+        service_id=service_id_1, amount=amounts_1[2], created_at=now
+    )
+    transaction14_avoided = transaction_factory(db_session).create(
+        service_id=service_id_1, amount=amounts_1_avoided[0], created_at=last_year_dt
+    )
+    transaction15_avoided = transaction_factory(db_session).create(
+        service_id=service_id_1,
+        amount=amounts_1_avoided[1],
+        created_at=two_years_ago_dt,
+    )
+    transactions1 = [transaction11, transaction12, transaction13]
+    amounts_2 = [3, 6]
+    amounts_2_avoided = [9, 12]
+    transaction21 = transaction_factory(db_session).create(
+        service_id=service_id_2, amount=amounts_2[0]
+    )
+    transaction22 = transaction_factory(db_session).create(
+        service_id=service_id_2, amount=amounts_2[1]
+    )
+    transaction23_avoided = transaction_factory(db_session).create(
+        service_id=service_id_2, amount=amounts_2_avoided[0], created_at=last_year_dt
+    )
+    transaction24_avoided = transaction_factory(db_session).create(
+        service_id=service_id_2,
+        amount=amounts_2_avoided[1],
+        created_at=two_years_ago_dt,
+    )
+    transactions2 = [transaction21, transaction22]
+    db_session.commit()
+
+    url = f"/api/transactions/services_statistics/?month={now.month}&year={now.year}"
+    response = client.get(url)
+    assert response.status_code == status.HTTP_200_OK
+    res_json = response.json()
+    assert len(res_json) == 2
+    for item_json in res_json:
+        match item_json["service_id"]:
+            case "111":  # service_id_1
+                assert item_json["count"] == len(transactions1)
+                assert item_json["sum"] == sum(amounts_1)
+            case "222":  # service_id_2
+                assert item_json["count"] == len(transactions2)
+                assert item_json["sum"] == sum(amounts_2)
