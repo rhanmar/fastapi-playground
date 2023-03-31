@@ -1,8 +1,8 @@
 from fastapi import Depends, APIRouter
 from sqlalchemy.orm import Session
-from db import models
-from db.schemas import TransactionSchema
-from dependencies import get_db, get_transaction
+from app.models import Transaction
+from app.schemas import TransactionSchema
+from app.dependencies import get_db, get_transaction
 from sqlalchemy import desc
 import sqlalchemy
 from sqlalchemy import func
@@ -20,9 +20,9 @@ def transactions_list(
     sort_by_amount: bool = False,
     sort_by_date: bool = False,
     db: Session = Depends(get_db),
-) -> list[models.Transaction]:
+) -> list[Transaction]:
     """Получить список Транзакций."""
-    transactions_db = db.query(models.Transaction)
+    transactions_db = db.query(Transaction)
     if user_id:
         transactions_db = transactions_db.filter_by(user_id=user_id)
     if service_id:
@@ -40,24 +40,20 @@ def transactions_services_statistics(
 ) -> list[dict]:
     """Статистика по Услугам на основании Транзакций."""
     qs = db.query(
-        models.Transaction.service_id.label("service_id"),
-        func.count(models.Transaction.service_id).label("count"),
-        func.sum(models.Transaction.amount).label("sum"),
-    ).group_by(models.Transaction.service_id)
+        Transaction.service_id.label("service_id"),
+        func.count(Transaction.service_id).label("count"),
+        func.sum(Transaction.amount).label("sum"),
+    ).group_by(Transaction.service_id)
     if month and year:
-        qs = qs.filter(
-            sqlalchemy.extract("month", models.Transaction.created_at) == month
-        )
-        qs = qs.filter(
-            sqlalchemy.extract("year", models.Transaction.created_at) == year
-        )
+        qs = qs.filter(sqlalchemy.extract("month", Transaction.created_at) == month)
+        qs = qs.filter(sqlalchemy.extract("year", Transaction.created_at) == year)
     qs = qs.all()
     return qs
 
 
 @router.get("/{transaction_id}/", response_model=TransactionSchema)
 def transaction_detail(
-    transaction: models.Transaction = Depends(get_transaction),
-) -> models.Transaction:
+    transaction: Transaction = Depends(get_transaction),
+) -> Transaction:
     """Получить Транзакцию."""
     return transaction

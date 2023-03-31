@@ -1,5 +1,5 @@
 from fastapi import status
-from db.models import User, Transaction
+from app.models import User, Transaction
 from .factories import transaction_factory, user_factory
 from datetime import datetime, timedelta
 

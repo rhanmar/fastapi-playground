@@ -1,9 +1,7 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Float, DateTime
+from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import relationship
-from datetime import datetime
 from sqlalchemy.ext.hybrid import hybrid_property
-
-from db.database import Base
+from app.config.database import Base
 
 
 class User(Base):
@@ -42,19 +40,3 @@ class User(Base):
     def transactions_sum_amount(self):
         if self.transactions:
             return sum(t.amount for t in self.transactions)
-
-
-class Transaction(Base):
-    """
-    Транзакция.
-
-    """
-
-    __tablename__ = "transactions"
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    user = relationship("User", back_populates="transactions")
-    created_at = Column(DateTime, default=datetime.now)
-    amount = Column(Float, info={"verbose_name": "Сумма средств"})
-    order_id = Column(String, info={"verbose_name": "ID Заказа"})
-    service_id = Column(String, info={"verbose_name": "ID Услуги"})

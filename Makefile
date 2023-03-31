@@ -1,5 +1,5 @@
 run:
-	uvicorn main:app --reload
+	uvicorn app.main:app --reload
 
 test:
 	docker-compose exec backend pytest

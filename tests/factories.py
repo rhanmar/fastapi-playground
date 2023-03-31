@@ -1,5 +1,5 @@
 import factory
-from db.models import User, Transaction
+from app.models import User, Transaction
 
 
 def user_factory(session):

@@ -1,8 +1,8 @@
 from fastapi import Depends, status, Body, APIRouter
 from sqlalchemy.orm import Session
-from db import models
-from db.schemas import UserSchema, UserCreateSchema
-from dependencies import get_db, get_user
+from app.models import User, Transaction
+from app.schemas import UserSchema, UserCreateSchema
+from app.dependencies import get_db, get_user
 
 router = APIRouter(
     prefix="/api/users",
@@ -12,7 +12,7 @@ router = APIRouter(
 @router.post("/{user_id}/add_money/")
 def add_money_to_account(
     money_amount: float = Body(embed=True),
-    user: models.User = Depends(get_user),
+    user: User = Depends(get_user),
     db: Session = Depends(get_db),
 ):
     """Начислить средства."""
@@ -27,7 +27,7 @@ def reserve_money(
     money_amount: float = Body(embed=True),
     service_id: str = Body(embed=True, default=None),
     order_id: str = Body(embed=True, default=None),
-    user: models.User = Depends(get_user),
+    user: User = Depends(get_user),
     db: Session = Depends(get_db),
 ):
     """Зарезервировать средства."""
@@ -50,7 +50,7 @@ def payment_confirmation(
     money_amount: float = Body(embed=True),
     service_id: str = Body(embed=True),
     order_id: str = Body(embed=True),
-    user: models.User = Depends(get_user),
+    user: User = Depends(get_user),
     db: Session = Depends(get_db),
 ):
     """Подтвердить оплату и снять указанное колияечтво денег с резерва."""
@@ -63,7 +63,7 @@ def payment_confirmation(
     db.add(user)
     db.commit()
 
-    transaction_db = models.Transaction(
+    transaction_db = Transaction(
         user_id=user.id,
         amount=money_amount,
         order_id=order_id,
@@ -79,7 +79,7 @@ def payment_confirmation(
 
 @router.post("/{user_id}/reset_reserve/")
 def reset_reserve(
-    user: models.User = Depends(get_user),
+    user: User = Depends(get_user),
     db: Session = Depends(get_db),
 ):
     """Вернуть деньги из резерва на баланс."""
@@ -100,15 +100,15 @@ def reset_reserve(
 
 
 @router.get("/{user_id}/", response_model=UserSchema)
-def user_account(user: models.User = Depends(get_user)) -> models.User:
+def user_account(user: User = Depends(get_user)) -> User:
     """Получить информацию о счёте Пользователя."""
     return user
 
 
 @router.get("/", response_model=list[UserSchema])
-def users_list(db: Session = Depends(get_db)) -> list[models.User]:
+def users_list(db: Session = Depends(get_db)) -> list[User]:
     """Получить список всех Пользователей."""
-    users_db = db.query(models.User).all()
+    users_db = db.query(User).all()
     return users_db
 
 
@@ -117,7 +117,7 @@ def create_user(
     user: UserCreateSchema, db: Session = Depends(get_db)
 ) -> dict[str, int]:
     """Создать Пользователя."""
-    user_db = models.User(name=user.name)
+    user_db = User(name=user.name)
     db.add(user_db)
     db.commit()
     return {"user_id": user_db.id}
