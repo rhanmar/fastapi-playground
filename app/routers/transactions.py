@@ -2,7 +2,7 @@ from fastapi import Depends, APIRouter
 from sqlalchemy.orm import Session
 from app.models import Transaction
 from app.schemas import TransactionSchema
-from app.dependencies import get_db
+from app.config.database import get_db
 from app.services import TransactionsService
 
 
